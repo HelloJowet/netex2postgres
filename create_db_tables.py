@@ -1,0 +1,14 @@
+from XML_Schema_Graph_Builder import XML_Schema_Graph_Builder
+from Simplified_Schema_Graph_Builder import Simplified_Schema_Graph_Builder
+from Final_Schema_Builder import Final_Schema_Builder 
+import config
+
+xml_schema_graph_builder = XML_Schema_Graph_Builder()
+xml_schema_graph_builder.create_graph('xsd_netex')
+
+simplified_schema_graph_builder = Simplified_Schema_Graph_Builder(xml_schema_graph_builder.graph)
+simplified_schema_graph_builder.create_graph('PublicationDelivery', 'PublicationDelivery')
+
+final_schema_builder = Final_Schema_Builder(simplified_schema_graph_builder.graph)
+final_schema_builder.create_schema('PublicationDelivery', None, [])
+final_schema_builder.create_tables_in_database(config.db_connection_url)
