@@ -5,7 +5,6 @@ class Simplified_Schema_Graph_Builder:
         self.graph = nx.DiGraph()
         self.schema_graph = schema_graph
 
-    
     def create_graph(self, node_id, graph_parent_node_id):
         edges = list(self.schema_graph.edges(node_id, data=True))
         
@@ -15,22 +14,29 @@ class Simplified_Schema_Graph_Builder:
             
         for edge in edges:
             target_edge_node_id = edge[1]
-            
-            # if target node is already added to simplified_schema_graph, only a connection to the target node should be created
-            # this should prevent endless loops
-            if target_edge_node_id in self.graph.nodes:
-                self.graph.add_edge(
-                    graph_parent_node_id,
-                    target_edge_node_id
-                )
-            # if node has the xml tag abstract, this node shouldn't be processed further, because abstract nodes aren't needed for the end schema
-            # this doesn't apply to abstract nodes with the tag 'substitutionGroup', because this nodes are highly important for the end schema
-            elif (not is_parent_node_abstract or edge[2]['edge_type'] == 'substitution_group'):
+                
+            # if node has the xml tag abstract, the node shouldn't be processed further, because abstract nodes aren't needed for the end schema
+            # experience has shown that every 'substitution_group' node should also be abstract
+            # example where substitution_group is needed (it seems that substitution_group is only needed in abstract nodes):
+                # <xsd:element name="CommonFrame" type="Common_VersionFrameStructure" abstract="true" substitutionGroup="VersionFrame">
+                # <xsd:element name="ServiceFrame" abstract="false" substitutionGroup="CommonFrame">
+            # example where substitution_group isn't needed:
+                # <xsd:element name="QuayRef" type="QuayRefStructure" substitutionGroup="StopPlaceSpaceRef">
+                # <xsd:element name="TaxiStandRef" type="TaxiStandRefStructure" substitutionGroup="QuayRef">
+            if (not is_parent_node_abstract and not edge[2]['edge_type'] == 'substitution_group') or (is_parent_node_abstract and edge[2]['edge_type'] == 'substitution_group'):
                 target_edge_node = self.schema_graph.nodes[target_edge_node_id]
-
+                
+                # if target node is already added to simplified_schema_graph, only a connection to the target node should be created
+                # this should prevent endless loops
+                if target_edge_node_id in self.graph.nodes:
+                    self.graph.add_edge(
+                        graph_parent_node_id,
+                        target_edge_node_id
+                    )
+                    
                 # only proceed if target node is further specified in schema_graph. Otherwise informations are missing how to proceed with target node
                 # TODO: check why target node isn't further specified
-                if target_edge_node != {}:
+                elif target_edge_node != {}:
                     has_ref_attribute = False
                     is_abstract = False
 
@@ -46,9 +52,9 @@ class Simplified_Schema_Graph_Builder:
                         
                         # a edge should always be unique
                         # because a lot of nodes got assigned random ids in the previous step, the uniqueness of edges in the schema_graph cannot be guaranteed
-                        # Example: 
-                        # the node 'Operator' and the node 'CustomerServiceContactDetails' are connected with two edges
-                        # both edges are describing the same connection but have different node ids for 'CustomerServiceContactDetails'
+                        # example: 
+                            # the node 'Operator' and the node 'CustomerServiceContactDetails' are connected with two edges
+                            # both edges are describing the same connection but have different node ids for 'CustomerServiceContactDetails'
                         # The following code should ensure that a edges are always unique
                         is_node_already_in_simplified_schema_graph = False
                         if graph_parent_node_id in self.graph.nodes:

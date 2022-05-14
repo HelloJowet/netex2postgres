@@ -78,7 +78,6 @@ class XML_Schema_Graph_Builder:
                 type = child.get('type')
                 ref = child.get('ref')
                 abstract = child.get('abstract')
-                substitution_group = child.get('substitutionGroup')
                 
                 self.graph.add_node(
                     random_id,
@@ -99,13 +98,7 @@ class XML_Schema_Graph_Builder:
                     if ref != None:
                         self.graph.add_edge(random_id, ref, edge_type = 'ref', is_list = False)
 
-                    if substitution_group != None:
-                        self.graph.add_edge(random_id, substitution_group, edge_type = 'ref', is_list = False)
-
                     self.process_node(child, random_id, False)
-                
-                if substitution_group != None:
-                    self.graph.add_edge(substitution_group, random_id, edge_type = 'substitution_group', is_list = is_list)
             elif child.tag in ['extension']:
                 self.graph.add_node(random_id, node_type = child.tag)
                 self.graph.add_edge(graph_parent_node_id, random_id, edge_type = None, is_list = is_list)
@@ -137,4 +130,4 @@ class XML_Schema_Graph_Builder:
                     self.graph.add_edge(random_id, item_type, edge_type = None, is_list = is_list)
             elif child.tag == 'unique':
                 self.graph.add_node(random_id, node_type = child.tag)
-                self.process_node(child, self.graph, random_id, False)
+                self.process_node(child, random_id, False)
