@@ -41,8 +41,6 @@ class Database_Handler:
 
                 self.postgresql_db.engine.execute(query + table_values)
 
-            print(f'table {table_name} done')
-
     
     def value_to_string(self, value):
         if isinstance(value, dict):

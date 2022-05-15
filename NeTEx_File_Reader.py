@@ -85,8 +85,11 @@ class NeTEx_File_Reader:
                     # example: <QuayRef ref="NSR:Quay:39450" version="1"/> in element 'PassengerStopAssignment'
                     elif child_xml.tag[-3:] == 'Ref' and child_xml.get('ref') != None:
                         result[child_node_name] = child_xml.get('ref')
+                    elif child_xml.text != None:
+                        text_value = child_xml.text.replace('\x96', '').replace("'", '').replace('"', '')
+                        result[child_node_name] = text_value
                     else:
-                        result[child_node_name] = child_xml.text
+                        result[child_node_name] = None
                         
         # add parent node id to result so that the nested xml structure get represented in a relational structure without data loss
         if parent_node_tag != None and parent_node_tag != None:
@@ -149,8 +152,11 @@ class NeTEx_File_Reader:
                         result[child_node_name], geom = self.xml_to_dict(child_xml, child_node_id_from_schema_graph)
                     elif child_xml.tag[-3:] == 'Ref' and child_xml.get('ref') != None:
                         result[child_node_name] = child_xml.get('ref')
+                    elif child_xml.text != None:
+                        text_value = child_xml.text.replace('\x96', '').replace("'", '').replace('"', '')
+                        result[child_node_name] = text_value
                     else:
-                        result[child_node_name] = child_xml.text
+                        result[child_node_name] = None
         
         return result, geom
 
@@ -179,10 +185,17 @@ class NeTEx_File_Reader:
                     if geom != None:
                         return [], geom
                 elif child_xml.tag[-3:] == 'Ref' and child_xml.get('ref') != None:
-                    result.append(child_xml.get('ref'))
+                    result.append({
+                        camel_to_snake(child_xml.tag): child_xml.get('ref')
+                    })
+                elif child_xml.text != None:
+                    text_value = child_xml.text.replace('\x96', '').replace("'", '').replace('"', '')
+                    result.append({
+                        camel_to_snake(child_xml.tag): text_value
+                    })
                 else:
                     result.append({
-                            camel_to_snake(child_xml.tag): child_xml.text
+                        camel_to_snake(child_xml.tag): None
                     })
             else:
                 # missing element in simplified schema 
@@ -225,6 +238,9 @@ class NeTEx_File_Reader:
             gml_string = gml_string.replace(f'{gml_namespace}:', 'gml:')
             gml_string = gml_string.replace('<', '<gml:')
             gml_string = gml_string.replace('<gml:/', '</gml:')
+
+        # correct spelling mistake
+        gml_string = gml_string.replace('ESPG:', 'EPSG:')
 
         # if spatial reference system isn't specified in gml geometry, add it
         if 'srsName' not in gml_string:
